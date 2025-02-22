@@ -172,6 +172,7 @@ function svd(
   if isnothing(USVT)
     return nothing
   end
+  AC = nothing
   UT, ST, VT, spec = USVT
   UC, S, VC = itensor(UT), itensor(ST), itensor(VT)
 
@@ -805,6 +806,7 @@ function factorize(
       which_decomp = "eigen"
     end
   end
+  println("\t\t\t\twhich_decomp: ", which_decomp)
   if which_decomp == "svd"
     LR = factorize_svd(
       A,
@@ -854,4 +856,113 @@ function factorize(
   l = l̃
 
   return L, R, spec, l
+end
+
+""" -------------   IN PLACE VERSIONS   ------------------- """
+
+qr!(A::ITensor; kwargs...) = error(noinds_error_message("qr!"))
+qr!(A::ITensor, Linds::Indices; kwargs...) = qr!(A, Linds, uniqueinds(A, Linds); kwargs...)
+qr!(A::ITensor, Linds...; kwargs...) = qr!(A, Linds, uniqueinds(A, Linds); kwargs...)
+
+
+@doc"""
+  function qr!(A::ITensor, Linds::Indices, Rinds::Indices; tags=ts"Link,qr", kwargs...)
+
+  Perform a QR decomposition of `A` with respect to the indices `Linds` and `Rinds`.
+  On exit only R is returned, and A is replaced by Q with already the correct indices.
+"""
+function qr!(A::ITensor, Linds::Indices, Rinds::Indices; tags=ts"Link,qr", kwargs...)
+  return qx!(qr!, A, Linds, Rinds; tags, kwargs...)
+end
+
+function qx!(
+  qxf!::Function, A::ITensor, Linds::Indices, Rinds::Indices; tags=ts"Link,qx", positive=false
+)
+  if (isempty(Linds) || isempty(Rinds))
+    error("Empty Indices in qr!.")
+  end
+
+  CL, CR = combiner(Linds...), combiner(Rinds...)
+  cL, cR = combinedind(CL), combinedind(CR)
+
+  #=
+  in order to perform the operation in place, and shrink the rank
+  of the tensor we must ensure that Linds is a permutation of 
+  the first length(Linds) of A, and similar for Rinds.
+  =#
+  tensorA = tensor(A)
+  Ainds = inds(tensorA)
+  lenLinds = length(Linds)
+  LindsA = Ainds[1:lenLinds]
+  RindsA = Ainds[lenLinds+1:end]
+
+  if (!issetequal(Linds, LindsA) || !issetequal(Rinds, RindsA))
+    error("The indices supplied to factorize! are not a partition of the original indices.")
+  end
+
+  #=
+  Instead of using the Combiner, which result would not share the
+  same storage of the original tensor, we work on a lower level
+  by creating a tensor which storage is a view of the original
+  tensor, but that has different indices.
+  =#
+  Q = setinds(tensorA, (cL, cR))
+  tensorA = nothing #free up memory
+  Q, X = qxf!(Q; positive) #pass order(Q)==2 matrix down to the NDTensors level where qr/ql are implemented.
+  #=
+  Now we have to undo the contraction of the indices
+  =#
+  settensor!(A, tensor(storage(Q),(LindsA..., inds(X)[1])))
+
+  X = setinds(X, (inds(X)[1], RindsA...))
+  X = itensor(X)
+  #
+  # fix up the tag name for the index between A and X.
+  #
+  q = commonind(A, X)
+  settags!(A, tags, q)
+  settags!(X, tags, q)
+  q = settags(q, tags)
+  return X
+
+end
+
+
+function factorize_qr!(A::ITensor, ortho::AbstractString, Linds...; tags=nothing, positive=false)
+  if ortho == "left"
+    R = qr!(A, Linds...; tags, positive)
+  elseif ortho == "right"
+    Lis = uniqueinds(A, indices(Linds...))
+    R = qr!(A, Lis...; tags, positive)
+  else
+    error("In factorize using qr decomposition, ortho keyword
+    $ortho not supported. Supported options are left or right.")
+  end
+  return R
+end
+
+factorize!(A::ITensor, Linds...; ortho=nothing, tags=nothing, plev=nothing, which_decomp=nothing) =
+  isnothing(ortho) ? error("In factorize!, ortho keyword must be provided.") :
+  factorize!(A, ortho, Linds...; tags, plev, which_decomp)
+
+function factorize!(
+  A::ITensor,
+  ortho::AbstractString,
+  Linds...;
+  tags=nothing,
+  plev=nothing,
+  which_decomp=nothing,
+)
+  if (!isnothing(which_decomp) && which_decomp != "qr")
+    throw(ArgumentError("""In factorize, factorization $which_decomp is not
+     currently supported. Use `"qr"` or `nothing`."""))
+  end
+  tags = NDTensors.replace_nothing(tags, ts"Link,fact")
+  plev = NDTensors.replace_nothing(plev, 0)
+  R = factorize_qr!(A, ortho, Linds...; tags)
+  l = commonind(A, R)
+  l̃ = setprime(settags(l, tags), plev)
+  R = replaceind(R, l, l̃)
+  spec = Spectrum(nothing, 0.0)
+  return A, R, spec, l̃
 end

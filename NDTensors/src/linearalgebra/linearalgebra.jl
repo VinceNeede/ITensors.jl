@@ -481,3 +481,30 @@ function polar(T::DenseTensor{ElT,2,IndsT}) where {ElT,IndsT}
   R = tensor(Dense(vec(RM)), Rinds)
   return Q, R
 end
+
+@doc"""
+  function qr!(T::DenseTensor{<:Any,2}; positive=false)
+  
+  Compute the QR decomposition of a rank-2 Dense Tensor.
+  It return 2 Dense Tensors Q and R such that Q*R = T.
+  Q is a unitary matrix and R is an upper triangular matrix.
+  Note that T is overwritten on exit.
+"""
+function qr!(T::DenseTensor{<:Any,2}; positive=false)
+  if positive
+    error("qr! does not support the positive keyword argument.")
+  end
+  q, r = inds(T)
+  q = dim(q) < dim(r) ? sim(q) : sim(r)
+
+  matrixT = matrix(T)
+  sparseQ, R = qr!(matrixT)
+  Q = Matrix(sparseQ)
+  
+  IndsT = indstype(T) #get the index type
+  Qinds = IndsT((ind(T, 1), q))
+  Rinds = IndsT((q, ind(T, 2)))
+  Q = tensor(Dense(Q), Qinds)
+  R = tensor(Dense(R), Rinds)
+  return Q, R
+end

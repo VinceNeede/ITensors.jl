@@ -105,6 +105,6 @@ import Base.Broadcast: Broadcasted, BroadcastStyle
 
 import Adapt: adapt_structure, adapt_storage
 
-import LinearAlgebra: diag, exp, norm, qr, svd, mul!
+import LinearAlgebra: diag, exp, norm, qr, qr!, svd, mul!
 
 import TupleTools: isperm

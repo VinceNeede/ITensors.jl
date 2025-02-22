@@ -30,9 +30,12 @@ end
 
 function state(::StateName{N}, ::SiteType"Qudit", s::Index) where {N}
   n = parse(Int, String(N))
-  st = zeros(dim(s))
-  st[n + 1] = 1.0
-  return itensor(st, s)
+  d = dim(s)
+  if n>=d
+    error("For a Qudit of dimension d = $d the basis goes from 0 to d-1 ")
+    return
+  end
+  return onehot(s=>n+1)
 end
 
 # one-body operators
@@ -90,6 +93,7 @@ end
 
 # interface
 function op(on::OpName, st::SiteType"Qudit", s1::Index, s_tail::Index...; kwargs...)
+  println((s1,s_tail...))
   rs = reverse((s1, s_tail...))
   ds = dim.(rs)
   opmat = op(on, st, ds...; kwargs...)

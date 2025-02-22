@@ -83,6 +83,7 @@ export
   entropy,
   polar,
   ql,
+  qr!,
   random_orthog,
   random_unitary,
   Spectrum,

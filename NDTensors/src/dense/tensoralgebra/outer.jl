@@ -30,6 +30,6 @@ end
 # TODO: call outer!!, make this generic
 function outer(T1::DenseTensor{ElT1}, T2::DenseTensor{ElT2}) where {ElT1,ElT2}
   array_outer = vec(array(T1)) * transpose(vec(array(T2)))
-  inds_outer = unioninds(inds(T1), inds(T2))
+  inds_outer = Base.union((inds(T1), inds(T2)))
   return tensor(Dense{promote_type(ElT1, ElT2)}(vec(array_outer)), inds_outer)
 end

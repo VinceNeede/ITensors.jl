@@ -24,6 +24,7 @@ export
   # tensor_operations/matrix_decomposition.jl
   eigen,
   factorize,
+  factorize!,
   polar,
   qr,
   rq,

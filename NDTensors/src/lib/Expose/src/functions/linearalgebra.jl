@@ -1,6 +1,9 @@
 function qr(E::Exposed)
   return qr(unexpose(E))
 end
+function qr!(E::Exposed)
+  return qr!(unexpose(E))
+end
 ## These functions do not exist in `LinearAlgebra` but were defined
 ## in NDTensors. Because Expose is imported before NDTensors,
 ## one cannot import a these functions from NDTensors so instead

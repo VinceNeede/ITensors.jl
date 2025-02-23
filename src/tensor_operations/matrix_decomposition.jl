@@ -806,7 +806,7 @@ function factorize(
       which_decomp = "eigen"
     end
   end
-  println("\t\t\t\twhich_decomp: ", which_decomp)
+  # println("\t\t\t\twhich_decomp: ", which_decomp)
   if which_decomp == "svd"
     LR = factorize_svd(
       A,
@@ -865,14 +865,14 @@ qr!(A::ITensor, Linds::Indices; kwargs...) = qr!(A, Linds, uniqueinds(A, Linds);
 qr!(A::ITensor, Linds...; kwargs...) = qr!(A, Linds, uniqueinds(A, Linds); kwargs...)
 
 
-@doc"""
-  function qr!(A::ITensor, Linds::Indices, Rinds::Indices; tags=ts"Link,qr", kwargs...)
+@doc """
+   function qr!(A::ITensor, Linds::Indices, Rinds::Indices; tags=ts"Link,qr", kwargs...)
 
-  Perform a QR decomposition of `A` with respect to the indices `Linds` and `Rinds`.
-  On exit only R is returned, and A is replaced by Q with already the correct indices.
-"""
+   Perform a QR decomposition of `A` with respect to the indices `Linds` and `Rinds`.
+   On exit only R is returned, and A is replaced by Q with already the correct indices.
+ """
 function qr!(A::ITensor, Linds::Indices, Rinds::Indices; tags=ts"Link,qr", kwargs...)
-  return qx!(qr!, A, Linds, Rinds; tags, kwargs...)
+  return qx!(NDTensors.qr!, A, Linds, Rinds; tags, kwargs...)
 end
 
 function qx!(
@@ -881,7 +881,9 @@ function qx!(
   if (isempty(Linds) || isempty(Rinds))
     error("Empty Indices in qr!.")
   end
-
+  # if(positive)
+  #   error("Positive keyword not supported in qr!.")
+  # end
   CL, CR = combiner(Linds...), combiner(Rinds...)
   cL, cR = combinedind(CL), combinedind(CR)
 
@@ -908,11 +910,11 @@ function qx!(
   =#
   Q = setinds(tensorA, (cL, cR))
   tensorA = nothing #free up memory
-  Q, X = qxf!(Q; positive) #pass order(Q)==2 matrix down to the NDTensors level where qr/ql are implemented.
+  Q, X = qxf!(Q;positive=positive) #pass order(Q)==2 matrix down to the NDTensors level where qr/ql are implemented.
   #=
   Now we have to undo the contraction of the indices
   =#
-  settensor!(A, tensor(storage(Q),(LindsA..., inds(X)[1])))
+  settensor!(A, tensor(storage(Q), (LindsA..., inds(X)[1])))
 
   X = setinds(X, (inds(X)[1], RindsA...))
   X = itensor(X)

@@ -34,6 +34,10 @@ export
   insertblock!,
   randomBlockSparseTensor,
 
+  # combiner.jl
+  # Macros
+  @Combine!,
+
   # dense.jl
   # Types
   Dense,

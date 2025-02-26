@@ -260,4 +260,20 @@ using Combinatorics: permutations
     replaceind!(B, c, l)
     @test B == A
   end
+
+  @testset "Macro @Combine!" begin
+    C = combiner(i,j)
+    AC = C*A
+    AC_Macro = @Combine! C*A
+    @test storage(AC_Macro) === storage(A)
+    @test AC ≈ AC_Macro
+
+    C = combiner(j,i)
+    Base.CoreLogging.with_logger(Base.CoreLogging.NullLogger()) do
+      AC = A*C
+      AC_Macro = @Combine! A*C  ## This line will throw a warning
+      @test !(storage(AC_Macro) === storage(A))
+      @test AC ≈ AC_Macro
+    end
+  end
 end

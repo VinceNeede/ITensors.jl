@@ -182,6 +182,8 @@ import ITensors.NDTensors:
   truncate!,
   using_tblis,
   vector,
+  # Macros
+  @Combine!,
   # Deprecated
   addblock!,
   store

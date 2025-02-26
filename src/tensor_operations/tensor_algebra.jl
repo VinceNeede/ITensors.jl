@@ -1,12 +1,12 @@
-function _contract(A::Tensor, B::Tensor)
+function _contract(A::Tensor, B::Tensor; kwargs...)
   labelsA, labelsB = compute_contraction_labels(inds(A), inds(B))
-  return contract(A, labelsA, B, labelsB)
+  return contract(A, labelsA, B, labelsB; kwargs...)
   # TODO: Alternative to try (`noncommoninds` is too slow right now)
   #return _contract!!(EmptyTensor(Float64, _Tuple(noncommoninds(inds(A), inds(B)))), A, B)
 end
 
-function _contract(A::ITensor, B::ITensor)::ITensor
-  C = itensor(_contract(tensor(A), tensor(B)))
+function _contract(A::ITensor, B::ITensor; kwargs...)::ITensor
+  C = itensor(_contract(tensor(A), tensor(B); kwargs...))
   warnTensorOrder = get_warn_order()
   if !isnothing(warnTensorOrder) > 0 && order(C) >= warnTensorOrder
     println("Contraction resulted in ITensor with $(order(C)) indices, which is greater
@@ -61,7 +61,7 @@ function (A::ITensor * B::ITensor)::ITensor
   return contract(A, B)
 end
 
-function contract(A::ITensor, B::ITensor)::ITensor
+function contract(A::ITensor, B::ITensor; kwargs...)::ITensor
   NA::Int = ndims(A)
   NB::Int = ndims(B)
   if NA == 0 && NB == 0
@@ -71,7 +71,7 @@ function contract(A::ITensor, B::ITensor)::ITensor
   elseif NB == 0
     return iscombiner(B) ? _contract(B, A) : B[] * A
   end
-  return _contract(A, B)
+  return _contract(A, B; kwargs...)
 end
 
 function optimal_contraction_sequence(A::Union{Vector{<:ITensor},Tuple{Vararg{ITensor}}})

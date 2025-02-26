@@ -91,9 +91,14 @@ function contract!!(
     labels_perm = tuple(output_tensor_vl...)
     perm = getperm(labels_perm, tensor_labels)
     tensorp = reshape(output_tensor, permute(inds(tensor), perm))
-    permutedims!(tensorp, tensor, perm)
-    res = reshape(tensorp, output_tensor_inds)
-    return res
+    is_trivial = is_trivial_permutation(perm)
+    if !is_trivial && inplace
+      @warn "The permutation is not trivial, a copy of the tensor is being made."
+      tensorp = permutedims(tensor, perm)
+    else
+      permutedims!(tensorp, tensor, perm)
+    end
+    return reshape(tensorp, output_tensor_inds)
   else # Uncombining
     cpos1, cpos2 = intersect_positions(combiner_tensor_labels, tensor_labels)
     output_tensor_storage = inplace ? storage(tensor) : copy(storage(tensor)) 

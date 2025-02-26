@@ -39,6 +39,7 @@ export
   @disable_warn_order,
   @reset_warn_order,
   @set_warn_order,
+  @Combine!,
   # index.jl
   # Types
   Index,

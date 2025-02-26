@@ -1,6 +1,6 @@
 function permutedims(tensor::Tensor, perm)
   (ndims(tensor) == length(perm) && isperm(perm)) ||
-    throw(ArgumentError("no valid permutation of dimensions"))
+  throw(ArgumentError("no valid permutation of dimensions"))
   output_tensor = NDTensors.similar(tensor, permute(inds(tensor), perm))
   return permutedims!!(output_tensor, tensor, perm)
 end
@@ -25,7 +25,7 @@ end
 function permutedims!(output_tensor::Tensor, tensor::Tensor, perm, f::Function)
   Base.checkdims_perm(output_tensor, tensor, perm)
   error(
-    "`permutedims!(output_tensor::Tensor, tensor::Tensor, perm, f::Function` not implemented for `typeof(output_tensor) = $(typeof(output_tensor))`, `typeof(tensor) = $(typeof(tensor))`, `perm = $perm`, and `f = $f`.",
+  "`permutedims!(output_tensor::Tensor, tensor::Tensor, perm, f::Function` not implemented for `typeof(output_tensor) = $(typeof(output_tensor))`, `typeof(tensor) = $(typeof(tensor))`, `perm = $perm`, and `f = $f`.",
   )
   return output_tensor
 end
@@ -33,7 +33,7 @@ end
 function permutedims!(output_tensor::Tensor, tensor::Tensor, perm)
   Base.checkdims_perm(output_tensor, tensor, perm)
   error(
-    "`permutedims!(output_tensor::Tensor, tensor::Tensor, perm` not implemented for `typeof(output_tensor) = $(typeof(output_tensor))`, `typeof(tensor) = $(typeof(tensor))`, and `perm = $perm`.",
+  "`permutedims!(output_tensor::Tensor, tensor::Tensor, perm` not implemented for `typeof(output_tensor) = $(typeof(output_tensor))`, `typeof(tensor) = $(typeof(tensor))`, and `perm = $perm`.",
   )
   return output_tensor
 end
@@ -49,17 +49,17 @@ end
 
 function contraction_output_type(
   tensortype1::Type{<:Tensor}, tensortype2::Type{<:Tensor}, inds
-)
+  )
   return similartype(promote_type(tensortype1, tensortype2), inds)
 end
 
 function contraction_output(
-  tensor1::Tensor, labelstensor1, tensor2::Tensor, labelstensor2, labelsoutput_tensor
+  tensor1::Tensor, labelstensor1, tensor2::Tensor, labelstensor2, labelsoutput_tensor; kwargs...
 )
   indsoutput_tensor = contract_inds(
     inds(tensor1), labelstensor1, inds(tensor2), labelstensor2, labelsoutput_tensor
   )
-  output_tensor = contraction_output(tensor1, tensor2, indsoutput_tensor)
+  output_tensor = contraction_output(tensor1, tensor2, indsoutput_tensor; kwargs...)
   return output_tensor
 end
 
@@ -85,33 +85,33 @@ end
 
 # Version where output labels aren't supplied
 @traitfn function contract(
-  tensor1::TensorT1, labels_tensor1, tensor2::TensorT2, labels_tensor2
-) where {TensorT1<:Tensor,TensorT2<:Tensor;CanContract{TensorT1,TensorT2}}
+  tensor1::TensorT1, labels_tensor1, tensor2::TensorT2, labels_tensor2; kwargs...
+  ) where {TensorT1<:Tensor,TensorT2<:Tensor;CanContract{TensorT1,TensorT2}}
   labelsoutput_tensor = contract_labels(labels_tensor1, labels_tensor2)
-  return contract(tensor1, labels_tensor1, tensor2, labels_tensor2, labelsoutput_tensor)
+  return contract(tensor1, labels_tensor1, tensor2, labels_tensor2, labelsoutput_tensor; kwargs...)
 end
 
 @traitfn function contract(
-  tensor1::TensorT1, labels_tensor1, tensor2::TensorT2, labels_tensor2
-) where {TensorT1<:Tensor,TensorT2<:Tensor;!CanContract{TensorT1,TensorT2}}
+  tensor1::TensorT1, labels_tensor1, tensor2::TensorT2, labels_tensor2; kwargs...
+  ) where {TensorT1<:Tensor,TensorT2<:Tensor;!CanContract{TensorT1,TensorT2}}
   return error(
-    "Can't contract tensor of storage type $(storagetype(tensor1)) with tensor of storage type $(storagetype(tensor2)).",
+  "Can't contract tensor of storage type $(storagetype(tensor1)) with tensor of storage type $(storagetype(tensor2)).",
   )
 end
 
 function contract(
-  tensor1::Tensor, labelstensor1, tensor2::Tensor, labelstensor2, labelsoutput_tensor
-)
+  tensor1::Tensor, labelstensor1, tensor2::Tensor, labelstensor2, labelsoutput_tensor; kwargs...
+  )
   # TODO: put the contract_inds logic into contraction_output,
   # call like output_tensor = contraction_ouput(tensor1,labelstensor1,tensor2,labelstensor2)
   #indsoutput_tensor = contract_inds(inds(tensor1),labelstensor1,inds(tensor2),labelstensor2,labelsoutput_tensor)
   output_tensor = contraction_output(
-    tensor1, labelstensor1, tensor2, labelstensor2, labelsoutput_tensor
+  tensor1, labelstensor1, tensor2, labelstensor2, labelsoutput_tensor; kwargs...
   )
   # contract!! version here since the output output_tensor may not
   # be mutable (like UniformDiag)
   output_tensor = contract!!(
-    output_tensor, labelsoutput_tensor, tensor1, labelstensor1, tensor2, labelstensor2
+  output_tensor, labelsoutput_tensor, tensor1, labelstensor1, tensor2, labelstensor2; kwargs...
   )
   return output_tensor
 end
@@ -127,26 +127,26 @@ function _contract!!(
   labelstensor2,
   α::Number=1,
   β::Number=0,
-)
+  )
   if α ≠ 1 || β ≠ 0
     contract!(
-      expose(output_tensor),
-      labelsoutput_tensor,
-      expose(tensor1),
-      labelstensor1,
-      expose(tensor2),
-      labelstensor2,
-      α,
-      β,
+    expose(output_tensor),
+    labelsoutput_tensor,
+    expose(tensor1),
+    labelstensor1,
+    expose(tensor2),
+    labelstensor2,
+    α,
+    β,
     )
   else
     contract!(
-      expose(output_tensor),
-      labelsoutput_tensor,
-      expose(tensor1),
-      labelstensor1,
-      expose(tensor2),
-      labelstensor2,
+    expose(output_tensor),
+    labelsoutput_tensor,
+    expose(tensor1),
+    labelstensor1,
+    expose(tensor2),
+    labelstensor2,
     )
   end
   return output_tensor
@@ -161,16 +161,16 @@ function contract!(
   labelstensor2,
   α::Number=one(Bool),
   β::Number=zero(Bool),
-)
+  )
   return contract!(
-    unexpose(output_tensor),
-    labelsoutput_tensor,
-    unexpose(tensor1),
-    labelstensor1,
-    unexpose(tensor2),
-    labelstensor2,
-    α,
-    β,
+  unexpose(output_tensor),
+  labelsoutput_tensor,
+  unexpose(tensor1),
+  labelstensor1,
+  unexpose(tensor2),
+  labelstensor2,
+  α,
+  β,
   )
 end
 
@@ -184,14 +184,16 @@ function contract!!(
   labelstensor2,
   α::Number=1,
   β::Number=0,
-)
+  )
   Noutput_tensor = ndims(output_tensor)
   N1 = ndims(tensor1)
   N2 = ndims(tensor2)
+  @debug "Should be here"
   if (N1 ≠ 0) && (N2 ≠ 0) && (N1 + N2 == Noutput_tensor)
+    @debug "case1"
     # Outer product
     (α ≠ 1 || β ≠ 0) && error(
-      "contract!! not yet implemented for outer product tensor contraction with non-trivial α and β",
+    "contract!! not yet implemented for outer product tensor contraction with non-trivial α and β",
     )
     # TODO: permute tensor1 and tensor2 appropriately first (can be more efficient
     # then permuting the result of tensor1⊗tensor2)
@@ -205,19 +207,21 @@ function contract!!(
     end
   else
     if α ≠ 1 || β ≠ 0
+      @debug "case2"
       output_tensor = _contract!!(
-        output_tensor,
-        labelsoutput_tensor,
-        tensor1,
-        labelstensor1,
-        tensor2,
-        labelstensor2,
-        α,
-        β,
+      output_tensor,
+      labelsoutput_tensor,
+      tensor1,
+      labelstensor1,
+      tensor2,
+      labelstensor2,
+      α,
+      β,
       )
     else
+      @debug "case3"
       output_tensor = _contract!!(
-        output_tensor, labelsoutput_tensor, tensor1, labelstensor1, tensor2, labelstensor2
+      output_tensor, labelsoutput_tensor, tensor1, labelstensor1, tensor2, labelstensor2
       )
     end
   end
